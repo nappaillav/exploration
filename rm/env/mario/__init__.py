@@ -1,14 +1,16 @@
-import gymnasium as gym 
-import gym as old_gym
+from typing import Callable, Dict
+
+import gymnasium as gym
+import gym as gym_old
 from gymnasium.vector import AsyncVectorEnv, SyncVectorEnv
 from gymnasium.wrappers import RecordEpisodeStatistics
 
-
-from .wrappers import JoypadSpace
+from nes_py.wrappers import JoypadSpace
 from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
-# rm - rienforcement module
-from .wrappers import (
-    EpisodeLifeEnv, 
+
+#from cleanrl.env.utils import Gymnasium2Torch
+from cleanrl.env.mario.wrapper import (
+    EpisodicLifeEnv, 
     SkipFrame,
     Gym2Gymnasium,
     ImageTranspose
@@ -22,39 +24,36 @@ def make_mario_env(
         seed: int = 0,
         gray_scale: bool = False,
         frame_stack: int = 0,
-    ):
-    # TODO : Do I need Gynasium2Torch ?
-    def make_env(env_id, seed):
-        def make_env(env_id: str, seed: int):
-            def _thunk():
-                # What difference with new gym (TODO)
-                # Does the order of the Wrapper play a role
-                env = gym_old.make(env_id, apply_api_compatibility=True, render_mode="rgb_array")
-                env = JoypadSpace(env, SIMPLE_MOVEMENT)
-                env = Gym2Gymnasium(env)
-                env = SkipFrame(env, skip=4)
-                env = gym.wrappers.ResizeObservation(env, (84, 84))
-                if gray_scale:
-                    env = gym.wrappers.GrayScaleObservation(env)
-                if frame_stack > 0:
-                    env = gym.wrappers.FrameStack(env, frame_stack)
-                if not gray_scale and frame_stack <= 0:
-                    env = ImageTranspose(env)
-                env = EpisodeLifeEnv(env)
-                env = gym.wrappers.TransformReward(env, lambda r: 0.01*r)
-                env.observation_space.seed(seed)
-                return env
-            return _thunk
-        envs = [make_env(env_id, seed + i) for i in range(num_envs)]
-        if asynchronous:
-            envs = AsyncVectorEnv(envs)
-        else:
-            envs = SyncVectorEnv(envs)
+    ) :
+
+    def make_env(env_id: str, seed: int) -> Callable:
+        def _thunk():
+            env = gym_old.make(env_id, apply_api_compatibility=True, render_mode="rgb_array")
+            env = JoypadSpace(env, SIMPLE_MOVEMENT)
+            env = Gym2Gymnasium(env)
+            env = SkipFrame(env, skip=4)
+            env = gym.wrappers.ResizeObservation(env, (84, 84))
+            if gray_scale:
+                env = gym.wrappers.GrayScaleObservation(env)
+            if frame_stack > 0:
+                env = gym.wrappers.FrameStack(env, frame_stack)
+            if not gray_scale and frame_stack <= 0:
+                env = ImageTranspose(env)
+            env = EpisodicLifeEnv(env)
+            env = gym.wrappers.TransformReward(env, lambda r: 0.01*r)
+            env.observation_space.seed(seed)
+            return env
+        return _thunk
     
-        envs = RecordEpisodeStatistics(envs)
-
-    return envs 
-
+    envs = [make_env(env_id, seed + i) for i in range(num_envs)]
+    if asynchronous:
+        envs = AsyncVectorEnv(envs)
+    else:
+        envs = SyncVectorEnv(envs)
+    
+    envs = RecordEpisodeStatistics(envs)
+    return envs
+    
 def make_mario_multilevel_env(
         env_id: str = "SuperMarioBrosRandomStages-v3",
         num_envs: int = 8,
