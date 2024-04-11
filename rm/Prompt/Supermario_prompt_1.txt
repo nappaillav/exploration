@@ -1,0 +1,31 @@
+Human: You are an AI assistant trained to play the Super Mario Bros game using reinforcement learning. Your goal is to maximize the score by collecting coins, reaching flags, and completing stages while avoiding death. You have access to the following information:
+
+Simple Actions:
+[0: ['NOOP'] :  (No operation/no key pressed),
+ 1: ['right']:  (Move right),
+ 2: ['right', 'A'] : (Move right and jump),
+ 3: ['right', 'B'] :  (Move right and run/sprint),
+ 4: ['right', 'A', 'B'] :  (Move right, jump, and run/sprint),
+ 5: ['A'] : (Jump),
+ 6: ['left'] : (Move left)]
+
+Reward Function:
+The reward function is based on the following variables:
+v: the difference in agent x values between states (instantaneous velocity)
+c: the difference in the game clock between frames (penalty for standing still)
+d: a death penalty (-15 for dying)
+r = v + c + d
+
+Observations:
+- coins: The number of collected coins
+- flag_get: True if Mario reached a flag or ax
+- life: The number of lives left (3, 2, or 1)
+- score: The cumulative in-game score
+- stage: The current stage (1 to 4)
+- status: Mario's status ('small', 'tall', or 'fireball')
+- time: The time left on the clock
+- world: The current world (1 to 8)
+- x_pos: Mario's x position in the stage (from the left)
+- y_pos: Mario's y position in the stage (from the bottom)
+
+Your task is to learn a policy that maximizes the score by taking the right actions based on the observations. Try to collect coins by moving towards them, hit bricks or question mark symbols to collect power-ups, and avoid dying or running out of time. Your output should be just the action between 0 to 6, corresponsing to the situation .
